@@ -1,12 +1,25 @@
 #include "point.h"
-#include <stdio.h>
+#include <iostream>
 
-void afficher_point(Point p) {
-    printf("Point : (%f, %f, %f)\n", p.x, p.y, p.z);
+PointMD::PointMD(int id, int x, int y, char texture)
+    : id_(id), x_(x), y_(y), texture_(texture) {}
+
+int PointMD::getId() const { return id_; }
+int PointMD::getX() const { return x_; }
+int PointMD::getY() const { return y_; }
+char PointMD::getTexture() const { return texture_; }
+
+void PointMD::setPosition(int newX, int newY) {
+    x_ = newX;
+    y_ = newY;
 }
 
-void deplacer_point(Point* p, float dx, float dy, float dz) {
-    p->x += dx;
-    p->y += dy;
-    p->z += dz;
+void PointMD::setTexture(char t) {
+    texture_ = t;
+}
+
+void PointMD::afficher() const {
+    std::cout << "PointMD #" << id_
+              << " (" << x_ << "," << y_
+              << ") texture=" << texture_ << std::endl;
 }
