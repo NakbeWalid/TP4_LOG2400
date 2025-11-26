@@ -1,15 +1,10 @@
 #pragma once
-#ifndef COMMANDE_H
-#define COMMANDE_H
 
-// Patron Command : prototypes et structures pour undo/redo
-typedef struct Commande {
-    void (*executer)(void* objet);
-    void (*annuler)(void* objet);
-    void* objet;
-} Commande;
+class Commande
+{
+public:
+    virtual ~Commande() = default;
 
-// Prototypes des fonctions de gestion de commandes ici
-
-#endif // COMMANDE_H
-Commande;
+    virtual void executer() = 0;
+    virtual void annuler() = 0;
+};

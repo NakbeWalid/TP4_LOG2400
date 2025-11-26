@@ -10,19 +10,18 @@
 using namespace std;
 
 void tracerLigne(vector<vector<string>> &grille,
-                 int x1, int y1, int x2, int y2)
+                 int x0, int y0, int x1, int y1)
 {
-    vector<vector<char>> gchar(HAUTEUR, vector<char>(LARGEUR, ' '));
+    vector<vector<char>> tmp(HAUTEUR, vector<char>(LARGEUR, ' '));
 
-    // réutilise la version char existente
-    tracerLigne(gchar, x1, y1, x2, y2);
+    tracerLigne(tmp, x0, y0, x1, y1); // version char
 
-    // convertit char → string
     for (int y = 0; y < HAUTEUR; y++)
         for (int x = 0; x < LARGEUR; x++)
-            if (gchar[y][x] != ' ')
-                grille[y][x] = string(1, gchar[y][x]);
+            if (tmp[y][x] == '/')
+                grille[y][x] = "/";
 }
+
 
 void tracerLigne(vector<vector<char>>& grille, int x0, int y0, int x1, int y1) {
     // Distance verticale

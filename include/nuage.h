@@ -1,26 +1,33 @@
 #pragma once
 #include <vector>
+#include "IElement.h"
 #include "point.h"
 
-class Nuage {
+class Nuage : public IElement
+{
 public:
-    Nuage(int id, char texture = 'o');
+    Nuage(int id, char texture = ' ');
 
-    int getId() const;
-    char getTexture() const;
-
-    const std::vector<PointMD*>& getPoints() const;
-
-    void ajouterPoint(PointMD* p);
+    // Gestion des enfants (points ou sous-nuages)
+    void ajouterPoint(IElement* p);
     void retirerPoint(int id);
 
-    // Applique une texture au nuage + aux points
+    // Accès
+    int getId() const;
+    char getTexture() const;
+    const std::vector<IElement*>& getEnfants() const;
+
+    // Appliquer texture à tous les points du nuage
     void appliquerTexture(char t);
 
-    void afficher() const;
+    // IElement
+    void afficher() const override;
+    void afficherDansGrille(std::vector<std::vector<char>>& grille,
+                            bool afficherID) const override;
+    std::vector<PointMD*> getPoints() const override;
 
 private:
     int id_;
-    char texture_;                  // texture principale du nuage
-    std::vector<PointMD*> points_;  // points dans ce nuage
+    char texture_;
+    std::vector<IElement*> enfants_;
 };

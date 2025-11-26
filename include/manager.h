@@ -1,19 +1,23 @@
 #pragma once
-#include "nuage.h"
-#include "texture.h"
+#include <vector>
+#include "IElement.h"
+#include "point.h"
 
-#ifndef MANAGER_H
-#define MANAGER_H
+// Le Manager gère les éléments (Points + Nuages) de manière centralisée.
+class Manager
+{
+private:
+    std::vector<IElement *> &elements; // référence vers la liste globale
 
-// Gestion centralisée de tous les nuages, textures…
-typedef struct {
-    Nuage* nuages;
-    int nb_nuages;
-    Texture* textures;
-    int nb_textures;
-} Manager;
+public:
+    Manager(std::vector<IElement *> &elems);
 
-// Prototypes pour ajouter, supprimer, etc.
+    // Récupère un élément (Point ou Nuage) contenant ce point ID
+    IElement *getElement(int id);
 
-#endif // MANAGER_H
+    // Récupère UNIQUEMENT un Point par ID
+    PointMD *getPoint(int id);
 
+    // Accès direct aux éléments (utile pour CmdSupprimer / CmdFusionner)
+    std::vector<IElement *> &getElements();
+};
