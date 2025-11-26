@@ -65,8 +65,10 @@ int main(int argc, char *argv[])
         if (cmd == "a")
         {
             cout << "\nListe des Points:\n";
-            for (auto p : pointsMD)
+            for (auto p : pointsMD){
+                if (!p) continue;
                 p->afficher();
+            }
 
             for (auto n : nuages)
             {
@@ -82,6 +84,7 @@ int main(int argc, char *argv[])
                 }
                 cout << "\n";
             }
+            continue;
         }
         else if (cmd == "f")
         {
@@ -119,10 +122,196 @@ int main(int argc, char *argv[])
                     cout << "ID " << i << " invalide !" << endl;
             }
 
+            n->appliquerTexture(t);
             nuages.push_back(n);
 
-            cout << "Nuage #" << n->getId() << " cree !" << endl;
+            continue;
+        }
 
+        else if (cmd == "c1")
+        {
+            if (nuages.empty())
+            {
+                cout << "Aucun nuage n'existe encore." << endl;
+                continue;
+            }
+
+            cout << "ID du nuage : ";
+            int nid;
+            cin >> nid;
+            cin.ignore();
+
+            if (nid < 0 || nid >= nuages.size())
+            {
+                cout << "Nuage invalide." << endl;
+                continue;
+            }
+
+            Nuage *n = nuages[nid];
+            SurfaceC1 strat;
+
+            auto lignes = strat.construire(*n);
+
+            // Prépare une grille vide
+            vector<vector<char>> grille(HAUTEUR, vector<char>(LARGEUR, ' '));
+
+            // Trace les lignes ASCII
+            for (auto &L : lignes)
+            {
+                tracerLigne(grille,
+                            L.a->getX(), L.a->getY(),
+                            L.b->getX(), L.b->getY());
+            }
+
+            // Affiche la grille
+            for (int y = HAUTEUR - 1; y >= 0; --y)
+            {
+                for (int x = 0; x < LARGEUR; ++x)
+                    cout << grille[y][x];
+                cout << '\n';
+            }
+
+            continue;
+        }
+        else if (cmd == "c2")
+        {
+            if (nuages.empty())
+            {
+                cout << "Aucun nuage n'existe encore." << endl;
+                continue;
+            }
+
+            cout << "ID du nuage : ";
+            int nid;
+            cin >> nid;
+            cin.ignore();
+
+            if (nid < 0 || nid >= nuages.size())
+            {
+                cout << "Nuage invalide." << endl;
+                continue;
+            }
+
+            Nuage *n = nuages[nid];
+            SurfaceC2 strat;
+
+            auto lignes = strat.construire(*n);
+
+            vector<vector<char>> grille(HAUTEUR, vector<char>(LARGEUR, ' '));
+
+            for (auto &L : lignes)
+            {
+                tracerLigne(grille,
+                            L.a->getX(), L.a->getY(),
+                            L.b->getX(), L.b->getY());
+            }
+
+            for (int y = HAUTEUR - 1; y >= 0; --y)
+            {
+                for (int x = 0; x < LARGEUR; ++x)
+                    cout << grille[y][x];
+                cout << '\n';
+            }
+
+            continue;
+        }
+        else if (cmd == "o1")
+        {
+            vector<vector<char>> grille(HAUTEUR, vector<char>(LARGEUR, ' '));
+
+            for (auto p : pointsMD)
+            {   
+                if (!p) continue;
+                int x = p->getX();
+                int y = p->getY();
+
+                if (x >= 0 && x < LARGEUR && y >= 0 && y < HAUTEUR){
+                    char t = p->getTexture();
+                    grille[y][x] = (t == ' ' ? '.' : t);
+                }
+            }
+
+            // Affichage
+            for (int y = HAUTEUR - 1; y >= 0; --y)
+            {
+                for (int x = 0; x < LARGEUR; ++x)
+                    cout << grille[y][x];
+                cout << '\n';
+            }
+
+            continue;
+        }
+        else if (cmd == "o2")
+        {
+            vector<vector<char>> grille(HAUTEUR, vector<char>(LARGEUR, ' '));
+
+            for (auto p : pointsMD)
+            {   
+                if (!p) continue;
+                int x = p->getX();
+                int y = p->getY();
+                int id = p->getId();
+
+                if (x >= 0 && x < LARGEUR && y >= 0 && y < HAUTEUR)
+                    grille[y][x] = (id < 10 ? ('0' + id) : '*');
+            }
+
+            for (int y = HAUTEUR - 1; y >= 0; --y)
+            {
+                for (int x = 0; x < LARGEUR; ++x)
+                    cout << grille[y][x];
+                cout << '\n';
+            }
+
+            continue;
+        }
+
+        else if (cmd == "d")
+        {
+            cout << "ID du point a deplacer : ";
+            int id;
+            cin >> id;
+            cin.ignore();
+
+            if (id < 0 || id >= pointsMD.size())
+            {
+                cout << "Point invalide." << endl;
+                continue;
+            }
+
+            cout << "Nouvelle position X Y : ";
+            int nx, ny;
+            cin >> nx >> ny;
+            cin.ignore();
+
+            pointsMD[id]->setPosition(nx, ny);
+
+            cout << "Point " << id << " deplace." << endl;
+            continue;
+        }
+        else if (cmd == "s")
+        {
+            cout << "ID du point a supprimer : ";
+            int id;
+            cin >> id;
+            cin.ignore();
+
+            if (id < 0 || id >= pointsMD.size())
+            {
+                cout << "Point invalide." << endl;
+                continue;
+            }
+
+            PointMD *cible = pointsMD[id];
+
+            // 1. Retirer des nuages
+            for (auto n : nuages)
+                n->retirerPoint(id);
+
+            // 2. Supprimer du vector pointsMD (on laisse un nullptr à la place)
+            pointsMD[id] = nullptr;
+
+            cout << "Point " << id << " supprime." << endl;
             continue;
         }
 

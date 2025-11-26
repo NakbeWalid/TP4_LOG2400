@@ -39,7 +39,7 @@ void imprimerGrille(const vector<Point>& points) {
 
     // On trace une ligne entre le point 0 et 1.
     // TODO : Remplacer par un tracé selon la commande de l'utilisateur (c1 ou c2)
-    tracerLigne(grille, points[0].x, points[0].y, points[1].x, points[1].y);
+    //tracerLigne(grille, points[0].x, points[0].y, points[1].x, points[1].y);
 
     // On imprime la grille.
     for (int y = HAUTEUR - 1; y >= 0; --y) {
