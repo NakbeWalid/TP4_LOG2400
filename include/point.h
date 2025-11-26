@@ -3,7 +3,7 @@
 
 class PointMD {
 public:
-    PointMD(int id, int x, int y, char texture = 'o');
+    PointMD(int id, int x, int y, char texture = ' ');
 
     int getId() const;
     int getX() const;

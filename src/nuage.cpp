@@ -27,15 +27,21 @@ void Nuage::retirerPoint(int id) {
 
 void Nuage::appliquerTexture(char t) {
     texture_ = t;
-    for (auto p : points_) {
+
+    // Appliquer texture aux enfants (Composite simple)
+    for (auto p : points_)
         p->setTexture(t);
-    }
 }
 
 void Nuage::afficher() const {
-    std::cout << "Nuage #" << id_
-              << " texture=" << texture_
-              << std::endl;
+    std::cout << "Nuage #" << id_ << " texture='";
+
+    if (texture_ == ' ')
+        std::cout << "'";
+    else
+        std::cout << texture_ << "'";
+
+    std::cout << std::endl;
 
     for (auto p : points_)
         p->afficher();

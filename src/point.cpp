@@ -18,8 +18,15 @@ void PointMD::setTexture(char t) {
     texture_ = t;
 }
 
-void PointMD::afficher() const {
-    std::cout << "PointMD #" << id_
-              << " (" << x_ << "," << y_
-              << ") texture=" << texture_ << std::endl;
+void PointMD::afficher() const 
+{
+    std::cout << id_
+              << ": (" << x_ << "," << y_ << ")  texture='";
+
+    if (texture_ == ' ')
+        std::cout << " '";
+    else
+        std::cout << texture_ << "'";
+
+    std::cout << std::endl;
 }
