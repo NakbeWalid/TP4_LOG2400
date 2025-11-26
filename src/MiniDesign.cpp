@@ -3,6 +3,7 @@
 #include "nuage.h"
 #include "surface.h"
 #include "texture.h"
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -14,7 +15,7 @@ int main(int argc, char *argv[])
 {
     string args;
 
-    // Lecture des points d'entrée
+    // Lecture des points
     if (argc > 1)
     {
         ostringstream oss;
@@ -28,63 +29,17 @@ int main(int argc, char *argv[])
         getline(cin, args);
     }
 
-    // // ========= TESTS (pour tester les fct avant de le faire avec les cmd du exe ) =========
-    // cout << "=== TEST PointMD ===" << endl;
-    // PointMD p1(0, 5, 3, 'o');
-    // PointMD p2(1, 10, 8, '#');
-    // p1.afficher(); p2.afficher();
-    // p1.setPosition(7,4); p1.setTexture('$'); p1.afficher();
-    // cout << "=== FIN TEST PointMD ===" << endl;
-
-    // cout << "\n=== TEST NUAGE ===" << endl;
-    // PointMD* pA = new PointMD(0, 5, 5, 'o');
-    // PointMD* pB = new PointMD(1, 10, 7, '#');
-    // Nuage n1(100, 'o');
-    // n1.ajouterPoint(pA); n1.ajouterPoint(pB);
-    // n1.afficher();
-    // n1.appliquerTexture('$');
-    // n1.afficher();
-    // cout << "=== FIN TEST NUAGE ===" << endl;
-
-    // cout << "\n=== TEST STRATEGY ===" << endl;
-    // Nuage n2(200, 'o');
-    // PointMD* sA = new PointMD(10, 2, 2);
-    // PointMD* sB = new PointMD(20, 8, 5);
-    // PointMD* sC = new PointMD(30, 15, 3);
-    // n2.ajouterPoint(sA); n2.ajouterPoint(sB); n2.ajouterPoint(sC);
-    // SurfaceC1 c1; SurfaceC2 c2;
-    // auto c1l = c1.construire(n2);
-    // auto c2l = c2.construire(n2);
-    // cout << "C1 lignes : " << c1l.size() << endl;
-    // cout << "C2 lignes : " << c2l.size() << endl;
-    // cout << "=== FIN TEST STRATEGY ===" << endl;
-    // // =============================================================
-    cout << "\n=== TEST NUAGE ===" << endl;
-
-    PointMD *p1 = new PointMD(0, 5, 5);
-    PointMD *p2 = new PointMD(1, 10, 7);
-
-    Nuage n(100);
-    n.ajouterPoint(p1);
-    n.ajouterPoint(p2);
-
-    n.afficher();
-
-    cout << "\nAppliquer texture '#'\n";
-    n.appliquerTexture('#');
-    n.afficher();
-
-    // POINTS ASCII
+    // POINTS ASCII pour affichage
     vector<Point> pointsAff = creerPoints(args);
     imprimerGrille(pointsAff);
 
-    // POINTS DU MODELE
+    // POINTS DU MODELE (PointMD)
     vector<PointMD *> pointsMD;
     int idCounter = 0;
     for (auto &p : pointsAff)
-        pointsMD.push_back(new PointMD(idCounter++, p.x, p.y, ' '));
+        pointsMD.push_back(new PointMD(idCounter++, p.x, p.y, ' ')); // texture vide
 
-    // STOCKAGE DES NUAGE POUR COMMANDE 'a'
+    // LISTE DES NUAGE (vide au début)
     vector<Nuage *> nuages;
 
     string cmd;
@@ -93,13 +48,13 @@ int main(int argc, char *argv[])
     {
         cout << "\nCommandes:\n"
              << "a  - Afficher les points et les nuages\n"
-             << "o1 - Afficher l'orthèse avec les textures des points\n"
-             << "o2 - Afficher l'orthèse avec les IDs des points\n"
-             << "f  - Fusionner des points dans un nuage (et appliquer texture)\n"
-             << "d  - Deplacer un point (ID)\n"
-             << "s  - Supprimer un point (ID)\n"
-             << "c1 - Créer les surfaces selon l'ordre des IDs\n"
-             << "c2 - Créer les surfaces selon la distance minimale\n"
+             << "o1 - Afficher l'orthèse (textures)\n"
+             << "o2 - Afficher l'orthèse (IDs)\n"
+             << "f  - Fusionner des points dans un nuage\n"
+             << "d  - Deplacer un point\n"
+             << "s  - Supprimer un point\n"
+             << "c1 - Surfaces (ordre des IDs)\n"
+             << "c2 - Surfaces (distance minimale)\n"
              << "q  - Quitter\n> ";
 
         getline(cin, cmd);
@@ -107,24 +62,71 @@ int main(int argc, char *argv[])
         if (cmd == "q")
             break;
 
-        else if (cmd == "a")
+        if (cmd == "a")
         {
-            cout << "\nListe des Points :\n";
+            cout << "\nListe des Points:\n";
             for (auto p : pointsMD)
+                p->afficher();
+
+            for (auto n : nuages)
             {
-                cout << p->getId() << ": ("
-                     << p->getX() << ","
-                     << p->getY() << ")  texture='"
-                     << p->getTexture() << "'"
-                     << endl;
+                cout << "Nuage '" << n->getTexture()
+                     << "' contient les points: ";
+
+                const auto &pts = n->getPoints();
+                for (size_t i = 0; i < pts.size(); ++i)
+                {
+                    cout << pts[i]->getId();
+                    if (i < pts.size() - 1)
+                        cout << ", ";
+                }
+                cout << "\n";
+            }
+        }
+        else if (cmd == "f")
+        {
+            cout << "Entrez les IDs des points a fusionner (ex: 0 2 5) : ";
+            string ligne;
+            getline(cin, ligne);
+
+            stringstream ss(ligne);
+            vector<int> ids;
+            int id;
+
+            while (ss >> id)
+                ids.push_back(id);
+
+            if (ids.empty())
+            {
+                cout << "Aucun ID valide." << endl;
+                continue;
             }
 
-            cout << "\nListe des Nuages :\n";
-            for (auto n : nuages)
-                n->afficher();
+            cout << "Texture du nuage : ";
+            char t;
+            cin >> t;
+            cin.ignore(); // vider le buffer
+
+            // Créer un nouveau Nuage
+            Nuage *n = new Nuage(nuages.size(), t);
+
+            // Ajouter les points dans le nuage
+            for (int i : ids)
+            {
+                if (i >= 0 && i < pointsMD.size())
+                    n->ajouterPoint(pointsMD[i]);
+                else
+                    cout << "ID " << i << " invalide !" << endl;
+            }
+
+            nuages.push_back(n);
+
+            cout << "Nuage #" << n->getId() << " cree !" << endl;
 
             continue;
         }
+
+        // Les autres commandes seront ajoutées ensuite
     }
 
     return 0;
