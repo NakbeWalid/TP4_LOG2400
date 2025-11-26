@@ -3,8 +3,26 @@
 #include <iostream>
 #include <sstream>
 #include <algorithm>
+#include <vector>
+
+
 
 using namespace std;
+
+void tracerLigne(vector<vector<string>> &grille,
+                 int x1, int y1, int x2, int y2)
+{
+    vector<vector<char>> gchar(HAUTEUR, vector<char>(LARGEUR, ' '));
+
+    // réutilise la version char existente
+    tracerLigne(gchar, x1, y1, x2, y2);
+
+    // convertit char → string
+    for (int y = 0; y < HAUTEUR; y++)
+        for (int x = 0; x < LARGEUR; x++)
+            if (gchar[y][x] != ' ')
+                grille[y][x] = string(1, gchar[y][x]);
+}
 
 void tracerLigne(vector<vector<char>>& grille, int x0, int y0, int x1, int y1) {
     // Distance verticale
@@ -17,7 +35,8 @@ void tracerLigne(vector<vector<char>>& grille, int x0, int y0, int x1, int y1) {
             // On trace chaque point de la ligne, de gauche à droite ou de droite à gauche selon la direction.
             int x = (x0 < x1) ? x0 + i : x0 - i;
             if (y1 >= 0 && y1 < HAUTEUR && x >= 0 && x < LARGEUR)
-                grille[y1][x] = '/';
+                if (grille[y1][x] == ' ')
+                    grille[y1][x] = '/';
         }
     } else {
         // Si la ligne est verticale ou diagonale 
@@ -75,3 +94,6 @@ vector<Point> creerPoints(const string& ligne) {
     }
     return points;
 }
+
+
+

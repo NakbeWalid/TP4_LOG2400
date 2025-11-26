@@ -4,25 +4,23 @@
 
 class Nuage {
 public:
-    Nuage(int id, char texture = ' ');
+    Nuage(int id, char texture = 'o');
 
-    // Gestion des points
+    int getId() const;
+    char getTexture() const;
+
+    const std::vector<PointMD*>& getPoints() const;
+
     void ajouterPoint(PointMD* p);
     void retirerPoint(int id);
 
-    // Accès
-    int getId() const;
-    char getTexture() const;
-    const std::vector<PointMD*>& getPoints() const;
-
-    // Modification
+    // Applique une texture au nuage + aux points
     void appliquerTexture(char t);
 
-    // Affichage (format TP)
     void afficher() const;
 
 private:
     int id_;
-    char texture_;                 // texture du nuage
-    std::vector<PointMD*> points_; // enfants (Composite simple)
+    char texture_;                  // texture principale du nuage
+    std::vector<PointMD*> points_;  // points dans ce nuage
 };
