@@ -41,7 +41,7 @@ void PointMD::afficher() const
               << ": (" << x_ << "," << y_ << ")  texture='";
 
     if (texture_ == ' ')
-        std::cout << " ";
+        std::cout << " '";
     else
         std::cout << texture_ << "'";
 

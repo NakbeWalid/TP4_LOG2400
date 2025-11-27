@@ -38,13 +38,13 @@ int main(int argc, char *argv[])
     imprimerGrille(pointsAff);
 
     // POINTS DU MODELE (PointMD) stockés comme IElement*
-    vector<IElement*> elements;      // uniquement les points au début
+    vector<IElement *> elements; // uniquement les points au début
     int idCounter = 0;
     for (auto &p : pointsAff)
         elements.push_back(new PointMD(idCounter++, p.x, p.y, ' '));
 
     // LISTE DES NUAGE (IElement*)
-    vector<IElement*> nuages;
+    vector<IElement *> nuages;
 
     // Lignes générées par c1 et c2 (pour o1 / o2)
     vector<Ligne> lignesC1;
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
     vector<char> texturesNuages = {'o', '#'};
 
     Invoker invoker;
-    Manager manager(elements); 
+    Manager manager(elements);
 
     string cmd;
 
@@ -91,17 +91,57 @@ int main(int argc, char *argv[])
         // AFFICHER POINTS + NUAGES
         else if (cmd == "a")
         {
-            cout << "\nListe des Points:\n";
-            for (auto e : manager.getElements())
-                if (e)
-                    e->afficher();
+            cout << "\nListe:\n";
 
+            // 1) Afficher les pointsg
+            for (auto e : manager.getElements())
+            {
+                PointMD *p = dynamic_cast<PointMD *>(e);
+                if (p)
+                {
+                    // afficher les textures du point
+                    cout << p->getId() << ": ("
+                         << p->getX() << "," << p->getY() << ")  textures: '";
+
+                    const auto &texs = p->getTextures();
+                    if (texs.empty())
+                        cout << " ";
+                    else
+                        for (char t : texs)
+                            cout << t;
+
+                    cout << "'\n";
+                }
+            }
+
+            // 2) Afficher les nuages
             for (auto elem : nuages)
-                if (elem)
-                    elem->afficher();
+            {
+                Nuage *n = dynamic_cast<Nuage *>(elem);
+                if (!n)
+                    continue;
+
+                cout << n->getId() << ": Nuage '" << n->getTexture()
+                     << "' contient les éléments: ";
+
+                for (auto e : n->getEnfants())
+                {
+                    PointMD *p = dynamic_cast<PointMD *>(e);
+                    if (p)
+                        cout << p->getId() << " ";
+                    else
+                    {
+                        Nuage *sub = dynamic_cast<Nuage *>(e);
+                        if (sub)
+                            cout << sub->getId() << " ";
+                    }
+                }
+                cout << "\n";
+            }
 
             continue;
         }
+
         // DEPLACER (commande avec undo/redo)
         else if (cmd == "d")
         {
@@ -110,7 +150,7 @@ int main(int argc, char *argv[])
             getline(cin, idStr);
             int id = stoi(idStr);
 
-            PointMD* p = manager.getPoint(id);
+            PointMD *p = manager.getPoint(id);
             if (!p)
             {
                 cout << "Erreur : point inexistant.\n";
@@ -124,7 +164,7 @@ int main(int argc, char *argv[])
             int nx, ny;
             ss >> nx >> ny;
 
-            Commande* c = new CmdDeplacer(p, nx, ny);
+            Commande *c = new CmdDeplacer(p, nx, ny);
             invoker.executer(c);
 
             cout << "Point " << id << " deplace.\n";
@@ -139,7 +179,7 @@ int main(int argc, char *argv[])
             int id = stoi(idStr);
 
             // On cherche un element (point ou nuage) contenant ce point ID
-            IElement* element = manager.getElement(id);
+            IElement *element = manager.getElement(id);
 
             if (!element)
             {
@@ -148,8 +188,8 @@ int main(int argc, char *argv[])
             }
 
             // Container primaire : les éléments gérés par le manager
-            std::vector<IElement*>& mgrElems = manager.getElements();
-            std::vector<IElement*>* container = nullptr;
+            std::vector<IElement *> &mgrElems = manager.getElements();
+            std::vector<IElement *> *container = nullptr;
 
             if (std::find(mgrElems.begin(), mgrElems.end(), element) != mgrElems.end())
                 container = &mgrElems;
@@ -162,7 +202,7 @@ int main(int argc, char *argv[])
                 continue;
             }
 
-            Commande* c = new CmdSupprimer(*container, element);
+            Commande *c = new CmdSupprimer(*container, element);
             invoker.executer(c);
 
             cout << "Element contenant le point " << id << " supprime.\n";
@@ -171,85 +211,129 @@ int main(int argc, char *argv[])
         // FUSIONNER DES POINTS DANS UN NOUVEAU NUAGE
         else if (cmd == "f")
         {
-            cout << "Entrez les IDs des points a fusionner (ex: 0 2 5) : ";
+            cout << "IDs de points/nuages à fusionner (ex: 0 2 5): ";
             string ligne;
             getline(cin, ligne);
 
             stringstream ss(ligne);
             vector<int> ids;
-            int id;
-            while (ss >> id)
-                ids.push_back(id);
+            int tmp;
+
+            while (ss >> tmp)
+                ids.push_back(tmp);
 
             if (ids.empty())
             {
-                cout << "Aucun ID valide." << endl;
+                cout << "Aucun ID valide.\n";
                 continue;
             }
 
-            // texture automatique : 1er nuage -> 'o', 2e -> '#', 3e -> '$', etc.
+            // Nouvelle texture automatique
             char tex = texturesNuages[nuages.size() % texturesNuages.size()];
 
-            // Création du nuage
-            Nuage* n = new Nuage((int)nuages.size(), tex);
+            // Créer le nouveau nuage
+            Nuage *nouveau = new Nuage((int)(elements.size()), tex);
 
+            // Pour chaque ID donné
             for (int pid : ids)
             {
-                PointMD* p = manager.getPoint(pid);
-                if (!p)
+                IElement *elem = manager.getElement(pid);
+
+                if (!elem)
                 {
                     cout << "ID " << pid << " invalide !" << endl;
                     continue;
                 }
 
-                n->ajouterPoint(p);
-                p->addTexture(tex); // on enregistre la texture dans le point
+                Nuage *subNuage = dynamic_cast<Nuage *>(elem);
+                PointMD *pmd = dynamic_cast<PointMD *>(elem);
+
+                if (pmd)
+                {
+                    // cas point simple
+                    nouveau->ajouterElement(pmd);
+                    pmd->addTexture(tex);
+                }
+                else if (subNuage)
+                {
+                    // cas NUAGE → on ajoute le NUAGE LUI-MÊME
+                    nouveau->ajouterElement(subNuage);
+                    subNuage->appliquerTexture(tex);
+                }
             }
 
-            // Appliquer texture à tous les enfants
-            n->appliquerTexture(tex);
+            // Appliquer texture au nuage (affichage)
+            nouveau->appliquerTexture(tex);
 
-            nuages.push_back(n);
+            // L’ajouter dans la liste
+            nuages.push_back(nouveau);
+            elements.push_back(nouveau); // IMPORTANT : devient un IElement*
 
-            cout << "Nuage #" << n->getId() << " cree avec texture '" << tex << "' !" << endl;
             continue;
         }
+
         // CREER LES SURFACES C1 (ordre des IDs)
         else if (cmd == "c1")
         {
             lignesC1.clear();
             SurfaceC1 strat;
 
+            // IMPORTANT : s'assurer que les nuages sont dans l'ordre croissant de leur ID
+            sort(nuages.begin(), nuages.end(),
+                 [](IElement *a, IElement *b)
+                 {
+                     return dynamic_cast<Nuage *>(a)->getId() <
+                            dynamic_cast<Nuage *>(b)->getId();
+                 });
+
             for (auto elem : nuages)
             {
-                Nuage* n = dynamic_cast<Nuage*>(elem);
+                Nuage *n = dynamic_cast<Nuage *>(elem);
                 if (!n)
+                    continue;
+
+                // ⚠ NE PAS CONSTRUIRE UNE SURFACE POUR < 2 POINTS
+                if (n->getPoints().size() < 2)
                     continue;
 
                 auto Ls = strat.construire(*n);
                 lignesC1.insert(lignesC1.end(), Ls.begin(), Ls.end());
             }
 
+            cout << "Surfaces C1 mises à jour.\n";
             continue;
         }
+
         // CREER LES SURFACES C2 (distance minimale)
         else if (cmd == "c2")
         {
             lignesC2.clear();
             SurfaceC2 strat;
 
+            sort(nuages.begin(), nuages.end(),
+                 [](IElement *a, IElement *b)
+                 {
+                     return dynamic_cast<Nuage *>(a)->getId() <
+                            dynamic_cast<Nuage *>(b)->getId();
+                 });
+
             for (auto elem : nuages)
             {
-                Nuage* n = dynamic_cast<Nuage*>(elem);
+                Nuage *n = dynamic_cast<Nuage *>(elem);
                 if (!n)
+                    continue;
+
+                if (n->getPoints().size() < 2)
                     continue;
 
                 auto Ls = strat.construire(*n);
                 lignesC2.insert(lignesC2.end(), Ls.begin(), Ls.end());
             }
 
+            cout << "Surfaces C2 mises à jour.\n";
             continue;
         }
+
         // ORTHESE TEXTURES
         else if (cmd == "o1")
         {
@@ -259,7 +343,7 @@ int main(int argc, char *argv[])
             // 1) Placer les textures des points
             for (auto e : manager.getElements())
             {
-                PointMD* p = dynamic_cast<PointMD*>(e);
+                PointMD *p = dynamic_cast<PointMD *>(e);
                 if (!p)
                     continue;
 
@@ -268,7 +352,7 @@ int main(int argc, char *argv[])
                 if (x < 0 || x >= LARGEUR || y < 0 || y >= HAUTEUR)
                     continue;
 
-                const auto& texs = p->getTextures();
+                const auto &texs = p->getTextures();
                 if (texs.empty())
                 {
                     grille[y][x] = ".";
@@ -283,14 +367,14 @@ int main(int argc, char *argv[])
             }
 
             // 2) Tracer les lignes C1
-            for (auto& L : lignesC1)
+            for (auto &L : lignesC1)
                 if (L.a && L.b)
                     tracerLigne(grille,
                                 L.a->getX(), L.a->getY(),
                                 L.b->getX(), L.b->getY());
 
             // 3) Tracer les lignes C2
-            for (auto& L : lignesC2)
+            for (auto &L : lignesC2)
                 if (L.a && L.b)
                     tracerLigne(grille,
                                 L.a->getX(), L.a->getY(),
@@ -299,7 +383,7 @@ int main(int argc, char *argv[])
             // 4) Ré-écrire les textures par-dessus les traits
             for (auto e : manager.getElements())
             {
-                PointMD* p = dynamic_cast<PointMD*>(e);
+                PointMD *p = dynamic_cast<PointMD *>(e);
                 if (!p)
                     continue;
 
@@ -308,7 +392,7 @@ int main(int argc, char *argv[])
                 if (x < 0 || x >= LARGEUR || y < 0 || y >= HAUTEUR)
                     continue;
 
-                const auto& texs = p->getTextures();
+                const auto &texs = p->getTextures();
                 if (texs.empty())
                     grille[y][x] = ".";
                 else
@@ -338,7 +422,7 @@ int main(int argc, char *argv[])
             // 1) Placer les IDs
             for (auto e : manager.getElements())
             {
-                PointMD* p = dynamic_cast<PointMD*>(e);
+                PointMD *p = dynamic_cast<PointMD *>(e);
                 if (!p)
                     continue;
 
@@ -350,14 +434,14 @@ int main(int argc, char *argv[])
             }
 
             // 2) Tracer les lignes C1
-            for (auto& L : lignesC1)
+            for (auto &L : lignesC1)
                 if (L.a && L.b)
                     tracerLigne(grille,
                                 L.a->getX(), L.a->getY(),
                                 L.b->getX(), L.b->getY());
 
             // 3) Tracer les lignes C2
-            for (auto& L : lignesC2)
+            for (auto &L : lignesC2)
                 if (L.a && L.b)
                     tracerLigne(grille,
                                 L.a->getX(), L.a->getY(),
@@ -366,7 +450,7 @@ int main(int argc, char *argv[])
             // 4) Ré-afficher les IDs par-dessus les traits
             for (auto e : manager.getElements())
             {
-                PointMD* p = dynamic_cast<PointMD*>(e);
+                PointMD *p = dynamic_cast<PointMD *>(e);
                 if (!p)
                     continue;
 

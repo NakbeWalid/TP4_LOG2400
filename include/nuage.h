@@ -9,7 +9,7 @@ public:
     Nuage(int id, char texture = ' ');
 
     // Gestion des enfants (points ou sous-nuages)
-    void ajouterPoint(IElement* p);
+    void ajouterElement(IElement* elem);
     void retirerPoint(int id);
 
     // Accès

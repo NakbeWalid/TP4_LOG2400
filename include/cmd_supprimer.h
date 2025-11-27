@@ -1,18 +1,19 @@
 #pragma once
 #include "commande.h"
-#include "IElement.h"
 #include <vector>
+#include <cstddef> 
+#include "IElement.h"
 
 class CmdSupprimer : public Commande
 {
-private:
-    std::vector<IElement *> &elements;
-    IElement *cible;
-    int indexRemoved; // position where the element was removed
-
 public:
-    CmdSupprimer(std::vector<IElement *> &elems, IElement *cible);
+    CmdSupprimer(std::vector<IElement*>& container, IElement* elem);
 
     void executer() override;
     void annuler() override;
+
+private:
+    std::vector<IElement*>& container_;
+    IElement* element_;
+    size_t oldIndex_;   // <-- IMPORTANT pour undo
 };

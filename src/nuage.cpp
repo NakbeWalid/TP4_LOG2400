@@ -15,7 +15,7 @@ const std::vector<IElement*>& Nuage::getEnfants() const
     return enfants_;
 }
 
-void Nuage::ajouterPoint(IElement* p)
+void Nuage::ajouterElement(IElement* p)
 {
     if (p)
         enfants_.push_back(p);
