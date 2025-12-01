@@ -1,0 +1,37 @@
+# Fichiers objets compiles
+*.o
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Dossiers de build
+build/
+bin/
+obj/
+
+# Fichiers temporaires
+*.tmp
+*.swp
+*~
+
+# Fichiers de compilation
+*.d
+*.dll
+*.so
+*.a
+*.lib
+
+# IDE
+.vscode/
+.idea/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+# Autres
+.DS_Store
+Thumbs.db
+

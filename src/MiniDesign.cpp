@@ -26,7 +26,6 @@ int main(int argc, char *argv[])
 {
     string args;
 
-    // Lecture des points
     if (argc > 1)
     {
         ostringstream oss;
@@ -43,16 +42,13 @@ int main(int argc, char *argv[])
     vector<Point> pointsAff = creerPoints(args);
     imprimerGrille(pointsAff);
 
-    // POINTS DU MODELE (PointMD) stockés comme IElement*
-    vector<IElement *> elements; // uniquement les points au début
+    vector<IElement *> elements;
     int idCounter = 0;
     for (auto &p : pointsAff)
         elements.push_back(new PointMD(idCounter++, p.x, p.y, ' '));
 
-    // LISTE DES NUAGE (IElement*)
     vector<IElement *> nuages;
 
-    // Lignes générées par c1 et c2 (pour o1 / o2)
     vector<Ligne> lignesC1;
     vector<Ligne> lignesC2;
 
@@ -68,12 +64,12 @@ int main(int argc, char *argv[])
         cout << "\nCommandes:\n"
              << "a  - Afficher les points et les nuages\n"
              << "o1 - Afficher l'orthese avec les textures des points\n"
-             << "o2 - Afficher l'orthese avec les IDs des points\n"
+             << "o2 - Afficher l'orthese avec les IDs dese points\n"
              << "f  - Fusionner des points dans un nuage (et appliquer texture)\n"
              << "d  - Deplacer un point (ID)\n"
              << "s  - Supprimer un point (ID)\n"
-             << "u - Annuler la dernière commande (undo)\n"
-             << "r- Reappliquer la derniêre commande annulee (redo)\n"
+             << "u  - Annuler la derniere commande (undo)\n"
+             << "r  - Reappliquer la derniere commande annulee (redo)\n"
              << "c1 - Creer les surfaces selon l'ordre des IDs\n"
              << "c2 - Creer les surfaces selon la distance minimale\n"
              << "q  - Quitter\n> ";
@@ -81,25 +77,27 @@ int main(int argc, char *argv[])
 
         if (cmd == "q")
             break;
+            
+            // UNDO, cmd qui sert a annuler un deplacement ou suppression de point 
 
-        // UNDO
         else if (cmd == "u")
         {
             invoker.undo();
             continue;
         }
-        // REDO
+            // REDO, Reappliquer la derniere commande annulee avc undo
+
         else if (cmd == "r")
         {
             invoker.redo();
             continue;
         }
-        // AFFICHER POINTS + NUAGES
+        // AFFICHER la lisgte des points et nuages numerote avc leurs IDs 
+
         else if (cmd == "a")
         {
             cout << "\nListe:\n";
 
-            // Séparer points et nuages
             vector<PointMD *> points;
             vector<Nuage *> clouds;
 
@@ -111,7 +109,6 @@ int main(int argc, char *argv[])
                     clouds.push_back(n);
             }
 
-            // Trier par ID
             sort(points.begin(), points.end(),
                  [](PointMD *a, PointMD *b)
                  { return a->getId() < b->getId(); });
@@ -120,16 +117,11 @@ int main(int argc, char *argv[])
                  [](Nuage *a, Nuage *b)
                  { return a->getId() < b->getId(); });
 
-            // --- 1) Affichage des points ---
             for (auto p : points)
             {
-                // Utiliser la methode afficher() qui peut etre surchargee par le Decorator
-                // Le Decorator delegue a l'element, donc on peut utiliser directement l'element
-                // Les textures sont deja appliquees par les decorators dans CmdFusionner
                 p->afficher();
             }
 
-            // --- 2) Affichage des nuages ---
             for (auto n : clouds)
             {
                 cout << n->getId() << ": Nuage '" << n->getTexture()
@@ -148,8 +140,7 @@ int main(int argc, char *argv[])
 
             continue;
         }
-
-        // DEPLACER (commande avec undo/redo)
+        // DEPLACER un point dans la grille du terminal , en lien avc commande avec undo/redo
         else if (cmd == "d")
         {
             cout << "ID du point a deplacer : ";
@@ -178,6 +169,7 @@ int main(int argc, char *argv[])
             continue;
         }
         // SUPPRIMER (commande avec undo/redo)
+
         else if (cmd == "s")
         {
             cout << "ID du point a supprimer : ";
@@ -185,7 +177,6 @@ int main(int argc, char *argv[])
             getline(cin, idStr);
             int id = stoi(idStr);
 
-            // On cherche un element (point ou nuage) contenant ce point ID
             IElement *element = manager.getElement(id);
 
             if (!element)
@@ -194,7 +185,6 @@ int main(int argc, char *argv[])
                 continue;
             }
 
-            // Container primaire : les éléments gérés par le manager
             std::vector<IElement *> &mgrElems = manager.getElements();
             std::vector<IElement *> *container = nullptr;
 
@@ -212,6 +202,7 @@ int main(int argc, char *argv[])
             continue;
         }
         // FUSIONNER DES POINTS/NUAGE DANS UN NOUVEAU NUAGE (Command Pattern)
+
         else if (cmd == "f")
         {
             cout << "IDs de points/nuages a fusionner (ex: 0 2 5): ";
@@ -235,8 +226,8 @@ int main(int argc, char *argv[])
             invoker.executer(c);
             continue;
         }
-
         // CREER LES SURFACES C1 (ordre des IDs)
+
         else if (cmd == "c1")
         {
             lignesC1.clear();
@@ -261,9 +252,7 @@ int main(int argc, char *argv[])
                 Nuage *n = dynamic_cast<Nuage *>(elem);
                 if (!n)
                     continue;
-                // ICI FAUT CHANGER LE CODE JE PENSE PARCE QUE ON VA SUPPOSER QUE UN NUAGE CONTIENT AU MOINS 2 points
                 auto pts = n->getPoints();
-                // ⚠ NE PAS CONSTRUIRE UNE SURFACE POUR < 2 POINTS
                 if (pts.size() < 2)
                 {
                     cout << "Nuage " << n->getId() << " a seulement " << pts.size() << " point(s), ignore.\n";
@@ -277,8 +266,8 @@ int main(int argc, char *argv[])
             cout << "Surfaces C1 mises a jour. (" << lignesC1.size() << " lignes creees)\n";
             continue;
         }
-
         // CREER LES SURFACES C2 (distance minimale)
+
         else if (cmd == "c2")
         {
             lignesC1.clear();
@@ -318,8 +307,8 @@ int main(int argc, char *argv[])
             cout << "Surfaces C2 mises a jour. (" << lignesC2.size() << " lignes creees)\n";
             continue;
         }
-
         // ORTHESE TEXTURES (Template Method)
+
         else if (cmd == "o1")
         {
             AffichageTexture affichage;
@@ -328,8 +317,8 @@ int main(int argc, char *argv[])
                               lignesC2.empty() ? nullptr : &lignesC2);
             continue;
         }
-        
         // ORTHESE IDs (Template Method)
+
         else if (cmd == "o2")
         {
             AffichageID affichage;

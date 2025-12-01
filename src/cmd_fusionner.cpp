@@ -42,14 +42,12 @@ void CmdFusionner::executer()
         if (auto pmd = dynamic_cast<PointMD*>(elem))
         {
             nouveauNuage_->ajouterElement(pmd);
-            // Utiliser le Decorator pour appliquer la texture (patron Decorator)
             TextureDecoratorConcret* decorator = new TextureDecoratorConcret(pmd, texture_);
             decorators_.push_back(decorator);
         }
         else if (auto subNuage = dynamic_cast<Nuage*>(elem))
         {
             nouveauNuage_->ajouterElement(subNuage);
-            // Utiliser le Decorator pour appliquer la texture aux points du sous-nuage (patron Decorator)
             auto pts = subNuage->getPoints();
             for (auto p : pts)
             {
@@ -62,8 +60,6 @@ void CmdFusionner::executer()
         }
     }
 
-    // Les textures sont deja appliquees par les decorators
-    // nouveauNuage_->appliquerTexture(texture_); // Plus necessaire avec le Decorator
     
     indexDansNuages_ = (int)nuages_.size();
     nuages_.push_back(nouveauNuage_);
@@ -79,7 +75,6 @@ void CmdFusionner::annuler()
     if (!nouveauNuage_)
         return;
 
-    // Retirer les textures avec les decorators
     for (auto decorator : decorators_)
     {
         if (decorator)
@@ -90,7 +85,6 @@ void CmdFusionner::annuler()
     }
     decorators_.clear();
 
-    // Retirer le nuage des vecteurs
     if (indexDansElements_ >= 0 && indexDansElements_ < (int)elements_.size())
     {
         elements_.erase(elements_.begin() + indexDansElements_);
@@ -101,8 +95,6 @@ void CmdFusionner::annuler()
         nuages_.erase(nuages_.begin() + indexDansNuages_);
     }
 
-    // Supprimer le nuage
     delete nouveauNuage_;
     nouveauNuage_ = nullptr;
 }
-

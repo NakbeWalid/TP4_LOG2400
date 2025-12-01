@@ -2,10 +2,9 @@
 
 void Invoker::executer(Commande *cmd)
 {
-    cmd->executer();     // fait l’action
-    undoStack.push(cmd); // on l’ajoute à l’historique
+    cmd->executer();
+    undoStack.push(cmd);
 
-    // Dès qu’on fait une nouvelle action, on efface redo
     while (!redoStack.empty())
         redoStack.pop();
 }
@@ -18,8 +17,8 @@ void Invoker::undo()
     Commande *cmd = undoStack.top();
     undoStack.pop();
 
-    cmd->annuler();      // annule l’effet
-    redoStack.push(cmd); // on la met dans redo
+    cmd->annuler();
+    redoStack.push(cmd);
 }
 
 void Invoker::redo()
@@ -30,6 +29,6 @@ void Invoker::redo()
     Commande *cmd = redoStack.top();
     redoStack.pop();
 
-    cmd->executer();     // refait l’action
-    undoStack.push(cmd); // revient dans undo
+    cmd->executer();
+    undoStack.push(cmd);
 }

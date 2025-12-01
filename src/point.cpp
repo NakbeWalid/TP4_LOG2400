@@ -30,10 +30,9 @@ void PointMD::setTexture(char t)
 
 void PointMD::addTexture(char t)
 {
-    // éviter les doublons
     if (std::find(textures_.begin(), textures_.end(), t) == textures_.end())
         textures_.push_back(t);
-    texture_ = t; // on garde la dernière comme "principale"
+    texture_ = t;
 }
 
 const std::vector<char>& PointMD::getTextures() const

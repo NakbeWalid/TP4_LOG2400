@@ -3,8 +3,6 @@
 #include "point.h"
 #include <vector>
 
-// Classe concrete pour l'affichage par IDs
-// Implemente le patron Template Method
 class AffichageID : public AffichageTemplate
 {
 private:
@@ -34,7 +32,6 @@ protected:
 
     void tracerLignes() override
     {
-        // Tracer les lignes C1
         if (lignesC1_)
         {
             for (const auto& L : *lignesC1_)
@@ -44,7 +41,6 @@ protected:
                                 L.b->getX(), L.b->getY());
         }
 
-        // Tracer les lignes C2
         if (lignesC2_)
         {
             for (const auto& L : *lignesC2_)
@@ -57,7 +53,6 @@ protected:
 
     void reDessinerElements() override
     {
-        // Re-afficher les IDs par-dessus les traits
         for (auto e : *elements_)
         {
             PointMD* p = dynamic_cast<PointMD*>(e);
@@ -84,7 +79,5 @@ protected:
 
     void postTraitement() override
     {
-        // Rien a faire pour les IDs
     }
 };
-

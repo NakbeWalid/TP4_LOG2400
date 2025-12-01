@@ -1,7 +1,6 @@
 #pragma once
 #include "commande.h"
 #include <vector>
-#include <cstddef> 
 #include "IElement.h"
 
 class CmdSupprimer : public Commande
@@ -15,5 +14,5 @@ public:
 private:
     std::vector<IElement*>& container_;
     IElement* element_;
-    size_t oldIndex_;   // <-- IMPORTANT pour undo
+    int oldIndex_;
 };

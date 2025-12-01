@@ -10,7 +10,6 @@ Nuage::Nuage(int id, char texture)
 
 Nuage::~Nuage()
 {
-    // Nettoyer les decorators
     for (auto decorator : decorators_)
     {
         if (decorator)
@@ -56,10 +55,6 @@ void Nuage::retirerPoint(int id)
 void Nuage::appliquerTexture(char t)
 {
     texture_ = t;
-    // Utiliser le Decorator pour appliquer la texture
-    // Note: Les decorators sont crees mais pas enregistres dans le Manager
-    // car cette methode n'a pas acces au Manager
-    // Les decorators sont geres localement dans le Nuage
     for (auto e : enfants_)
     {
         auto pts = e->getPoints();
