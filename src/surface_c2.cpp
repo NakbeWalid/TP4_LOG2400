@@ -1,32 +1,7 @@
-#include "surface.h"
+#include "surface_c2.h"
 #include <algorithm>
 #include <cmath>
 
-// ---------------------------
-// STRATÉGIE C1 : ordre des IDs
-// ---------------------------
-std::vector<Ligne> SurfaceC1::construire(const Nuage& n) const
-{
-    std::vector<Ligne> lignes;
-    auto pts = n.getPoints();
-
-    if (pts.size() < 2)
-        return lignes;
-
-    // Tri selon les IDs
-    std::vector<PointMD*> tri = pts;
-    std::sort(tri.begin(), tri.end(),
-              [](PointMD* a, PointMD* b) { return a->getId() < b->getId(); });
-
-    for (size_t i = 0; i < tri.size() - 1; ++i)
-        lignes.push_back({ tri[i], tri[i+1] });
-
-    return lignes;
-}
-
-// ---------------------------
-// Calcul distance
-// ---------------------------
 static double dist(PointMD* a, PointMD* b)
 {
     return std::sqrt(
@@ -35,9 +10,6 @@ static double dist(PointMD* a, PointMD* b)
     );
 }
 
-// ---------------------------
-// STRATÉGIE C2 : chemin greedy
-// ---------------------------
 std::vector<Ligne> SurfaceC2::construire(const Nuage& n) const
 {
     std::vector<Ligne> lignes;
@@ -46,13 +18,24 @@ std::vector<Ligne> SurfaceC2::construire(const Nuage& n) const
     if (pts.size() < 2)
         return lignes;
 
+    if (pts.size() == 2)
+    {
+        lignes.push_back({ pts[0], pts[1] });
+        return lignes;
+    }
     std::vector<PointMD*> restants = pts;
+    PointMD* premier = nullptr;
 
-    // Démarre au point le plus bas en X
     std::sort(restants.begin(), restants.end(),
-              [](PointMD* a, PointMD* b) { return a->getX() < b->getX(); });
+              [](PointMD* a, PointMD* b) 
+              { 
+                  if (a->getX() != b->getX())
+                      return a->getX() < b->getX();
+                  return a->getY() < b->getY();
+              });
 
     PointMD* courant = restants[0];
+    premier = courant;
     restants.erase(restants.begin());
 
     while (!restants.empty()) {
@@ -78,5 +61,9 @@ std::vector<Ligne> SurfaceC2::construire(const Nuage& n) const
                        restants.end());
     }
 
+    if (premier && courant && premier != courant)
+        lignes.push_back({ courant, premier });
+
     return lignes;
 }
+

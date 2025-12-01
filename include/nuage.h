@@ -3,10 +3,14 @@
 #include "IElement.h"
 #include "point.h"
 
+// Forward declaration
+class TextureDecoratorConcret;
+
 class Nuage : public IElement
 {
 public:
     Nuage(int id, char texture = ' ');
+    ~Nuage();
 
     // Gestion des enfants (points ou sous-nuages)
     void ajouterElement(IElement* elem);
@@ -31,4 +35,5 @@ private:
     int id_;
     char texture_;
     std::vector<IElement*> enfants_;
+    std::vector<TextureDecoratorConcret*> decorators_; // Pour stocker les decorators
 };

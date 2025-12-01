@@ -12,14 +12,33 @@ using namespace std;
 void tracerLigne(vector<vector<string>> &grille,
                  int x0, int y0, int x1, int y1)
 {
-    vector<vector<char>> tmp(HAUTEUR, vector<char>(LARGEUR, ' '));
-
-    tracerLigne(tmp, x0, y0, x1, y1); // version char
-
-    for (int y = 0; y < HAUTEUR; y++)
-        for (int x = 0; x < LARGEUR; x++)
-            if (tmp[y][x] == '/')
+    // Distance verticale
+    int lignes = abs(y1 - y0);
+    // Si la ligne est horizontale 
+    if (lignes == 0) {
+        // On prend distance horizontale 
+        lignes = abs(x1 - x0);
+        if (lignes == 0) {
+            // Point unique
+            if (y0 >= 0 && y0 < HAUTEUR && x0 >= 0 && x0 < LARGEUR)
+                grille[y0][x0] = "/";
+            return;
+        }
+        for (int i = 0; i <= lignes; ++i) {
+            int x = (x0 < x1) ? x0 + i : x0 - i;
+            if (y1 >= 0 && y1 < HAUTEUR && x >= 0 && x < LARGEUR)
+                grille[y1][x] = "/";
+        }
+    } else {
+        // Si la ligne est verticale ou diagonale 
+        for (int i = 0; i <= lignes; ++i) {
+            double t = (double)i / lignes;
+            int x = round(x0 + t * (x1 - x0));
+            int y = round(y0 + t * (y1 - y0));
+            if (x >= 0 && x < LARGEUR && y >= 0 && y < HAUTEUR)
                 grille[y][x] = "/";
+        }
+    }
 }
 
 
@@ -30,12 +49,17 @@ void tracerLigne(vector<vector<char>>& grille, int x0, int y0, int x1, int y1) {
     if (lignes == 0) {
         // On prend distance horizontale 
         lignes = abs(x1 - x0);
+        if (lignes == 0) {
+            // Point unique
+            if (y0 >= 0 && y0 < HAUTEUR && x0 >= 0 && x0 < LARGEUR)
+                grille[y0][x0] = '/';
+            return;
+        }
         for (int i = 0; i <= lignes; ++i) {
             // On trace chaque point de la ligne, de gauche à droite ou de droite à gauche selon la direction.
             int x = (x0 < x1) ? x0 + i : x0 - i;
             if (y1 >= 0 && y1 < HAUTEUR && x >= 0 && x < LARGEUR)
-                if (grille[y1][x] == ' ')
-                    grille[y1][x] = '/';
+                grille[y1][x] = '/';
         }
     } else {
         // Si la ligne est verticale ou diagonale 

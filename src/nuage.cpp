@@ -1,10 +1,22 @@
 #include "nuage.h"
+#include "texture_decorator_concret.h"
 #include <iostream>
 #include <algorithm>
 
 Nuage::Nuage(int id, char texture)
     : id_(id), texture_(texture)
 {
+}
+
+Nuage::~Nuage()
+{
+    // Nettoyer les decorators
+    for (auto decorator : decorators_)
+    {
+        if (decorator)
+            delete decorator;
+    }
+    decorators_.clear();
 }
 
 int Nuage::getId() const { return id_; }
@@ -44,12 +56,21 @@ void Nuage::retirerPoint(int id)
 void Nuage::appliquerTexture(char t)
 {
     texture_ = t;
+    // Utiliser le Decorator pour appliquer la texture
+    // Note: Les decorators sont crees mais pas enregistres dans le Manager
+    // car cette methode n'a pas acces au Manager
+    // Les decorators sont geres localement dans le Nuage
     for (auto e : enfants_)
     {
         auto pts = e->getPoints();
         for (auto p : pts)
+        {
             if (p)
-                p->addTexture(t);
+            {
+                TextureDecoratorConcret* decorator = new TextureDecoratorConcret(p, t);
+                decorators_.push_back(decorator);
+            }
+        }
     }
 }
 

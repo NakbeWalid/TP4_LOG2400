@@ -1,11 +1,17 @@
 #include "affichage.h"
+#include "affichage_template.h"
+#include "affichage_texture.h"
+#include "affichage_id.h"
 #include "point.h"
 #include "nuage.h"
-#include "surface.h"
-#include "texture.h"
+#include "surface_strategy.h"
+#include "surface_c1.h"
+#include "surface_c2.h"
+#include "texture_decorator.h"
 #include "manager.h"
 #include "cmd_deplacer.h"
 #include "cmd_supprimer.h"
+#include "cmd_fusionner.h"
 #include "invoker.h"
 
 #include <iostream>
@@ -117,17 +123,10 @@ int main(int argc, char *argv[])
             // --- 1) Affichage des points ---
             for (auto p : points)
             {
-                cout << p->getId() << ": ("
-                     << p->getX() << "," << p->getY() << ")  textures: '";
-
-                const auto &texs = p->getTextures();
-                if (texs.empty())
-                    cout << " ";
-                else
-                    for (char t : texs)
-                        cout << t;
-
-                cout << "'\n";
+                // Utiliser la methode afficher() qui peut etre surchargee par le Decorator
+                // Le Decorator delegue a l'element, donc on peut utiliser directement l'element
+                // Les textures sont deja appliquees par les decorators dans CmdFusionner
+                p->afficher();
             }
 
             // --- 2) Affichage des nuages ---
@@ -204,11 +203,7 @@ int main(int argc, char *argv[])
             else if (std::find(nuages.begin(), nuages.end(), element) != nuages.end())
                 container = &nuages;
 
-            if (!container)
-            {
-                cout << "Erreur interne : container de l'element introuvable.\n";
-                continue;
-            }
+
 
             Commande *c = new CmdSupprimer(*container, element);
             invoker.executer(c);
@@ -216,11 +211,10 @@ int main(int argc, char *argv[])
             cout << "Element contenant le point " << id << " supprime.\n";
             continue;
         }
-        // FUSIONNER DES POINTS DANS UN NOUVEAU NUAGE
-        // FUSIONNER DES POINTS/NUAGE DANS UN NOUVEAU NUAGE
+        // FUSIONNER DES POINTS/NUAGE DANS UN NOUVEAU NUAGE (Command Pattern)
         else if (cmd == "f")
         {
-            cout << "IDs de points/nuages à fusionner (ex: 0 2 5): ";
+            cout << "IDs de points/nuages a fusionner (ex: 0 2 5): ";
             string ligne;
             getline(cin, ligne);
 
@@ -237,36 +231,8 @@ int main(int argc, char *argv[])
                 continue;
             }
 
-            char tex = texturesNuages[nuages.size() % texturesNuages.size()];
-
-            Nuage *nouveau = new Nuage((int)elements.size(), tex);
-
-            for (int pid : ids)
-            {
-                IElement *elem = manager.getElement(pid);
-
-                if (!elem)
-                {
-                    cout << "ID " << pid << " invalide !" << endl;
-                    continue;
-                }
-
-                if (auto pmd = dynamic_cast<PointMD *>(elem))
-                {
-                    nouveau->ajouterElement(pmd);
-                    pmd->addTexture(tex);
-                }
-                else if (auto subNuage = dynamic_cast<Nuage *>(elem))
-                {
-                    nouveau->ajouterElement(subNuage); // on ajoute le nuage, pas ses points
-                    subNuage->appliquerTexture(tex);   // applique la texture à tous ses points
-                }
-            }
-
-            nouveau->appliquerTexture(tex);
-            nuages.push_back(nouveau);
-            elements.push_back(nouveau); // IMPORTANT
-
+            CmdFusionner* c = new CmdFusionner(elements, nuages, manager, texturesNuages, ids);
+            invoker.executer(c);
             continue;
         }
 
@@ -274,9 +240,15 @@ int main(int argc, char *argv[])
         else if (cmd == "c1")
         {
             lignesC1.clear();
+            lignesC2.clear(); 
             SurfaceC1 strat;
 
-            // IMPORTANT : s'assurer que les nuages sont dans l'ordre croissant de leur ID
+            if (nuages.empty())
+            {
+                cout << "Aucun nuage disponible. Utilisez 'f' pour creer des nuages.\n";
+                continue;
+            }
+
             sort(nuages.begin(), nuages.end(),
                  [](IElement *a, IElement *b)
                  {
@@ -289,24 +261,35 @@ int main(int argc, char *argv[])
                 Nuage *n = dynamic_cast<Nuage *>(elem);
                 if (!n)
                     continue;
-
+                // ICI FAUT CHANGER LE CODE JE PENSE PARCE QUE ON VA SUPPOSER QUE UN NUAGE CONTIENT AU MOINS 2 points
+                auto pts = n->getPoints();
                 // ⚠ NE PAS CONSTRUIRE UNE SURFACE POUR < 2 POINTS
-                if (n->getPoints().size() < 2)
+                if (pts.size() < 2)
+                {
+                    cout << "Nuage " << n->getId() << " a seulement " << pts.size() << " point(s), ignore.\n";
                     continue;
+                }
 
                 auto Ls = strat.construire(*n);
                 lignesC1.insert(lignesC1.end(), Ls.begin(), Ls.end());
             }
 
-            cout << "Surfaces C1 mises à jour.\n";
+            cout << "Surfaces C1 mises a jour. (" << lignesC1.size() << " lignes creees)\n";
             continue;
         }
 
         // CREER LES SURFACES C2 (distance minimale)
         else if (cmd == "c2")
         {
+            lignesC1.clear();
             lignesC2.clear();
             SurfaceC2 strat;
+
+            if (nuages.empty())
+            {
+                cout << "Aucun nuage disponible. Utilisez 'f' pour creer des nuages.\n";
+                continue;
+            }
 
             sort(nuages.begin(), nuages.end(),
                  [](IElement *a, IElement *b)
@@ -321,152 +304,38 @@ int main(int argc, char *argv[])
                 if (!n)
                     continue;
 
-                if (n->getPoints().size() < 2)
+                auto pts = n->getPoints();
+                if (pts.size() < 2)
+                {
+                    cout << "Nuage " << n->getId() << " a seulement " << pts.size() << " point(s), ignore.\n";
                     continue;
+                }
 
                 auto Ls = strat.construire(*n);
                 lignesC2.insert(lignesC2.end(), Ls.begin(), Ls.end());
             }
 
-            cout << "Surfaces C2 mises à jour.\n";
+            cout << "Surfaces C2 mises a jour. (" << lignesC2.size() << " lignes creees)\n";
             continue;
         }
 
-        // ORTHESE TEXTURES
+        // ORTHESE TEXTURES (Template Method)
         else if (cmd == "o1")
         {
-            // grille de string pour pouvoir afficher "o#", "o##", etc.
-            vector<vector<string>> grille(HAUTEUR, vector<string>(LARGEUR, " "));
-
-            // 1) Placer les textures des points
-            for (auto e : manager.getElements())
-            {
-                PointMD *p = dynamic_cast<PointMD *>(e);
-                if (!p)
-                    continue;
-
-                int x = p->getX();
-                int y = p->getY();
-                if (x < 0 || x >= LARGEUR || y < 0 || y >= HAUTEUR)
-                    continue;
-
-                const auto &texs = p->getTextures();
-                if (texs.empty())
-                {
-                    grille[y][x] = ".";
-                }
-                else
-                {
-                    string s;
-                    for (char t : texs)
-                        s.push_back(t); // ex: "o", "#", "o#"
-                    grille[y][x] = s;
-                }
-            }
-
-            // 2) Tracer les lignes C1
-            for (auto &L : lignesC1)
-                if (L.a && L.b)
-                    tracerLigne(grille,
-                                L.a->getX(), L.a->getY(),
-                                L.b->getX(), L.b->getY());
-
-            // 3) Tracer les lignes C2
-            for (auto &L : lignesC2)
-                if (L.a && L.b)
-                    tracerLigne(grille,
-                                L.a->getX(), L.a->getY(),
-                                L.b->getX(), L.b->getY());
-
-            // 4) Ré-écrire les textures par-dessus les traits
-            for (auto e : manager.getElements())
-            {
-                PointMD *p = dynamic_cast<PointMD *>(e);
-                if (!p)
-                    continue;
-
-                int x = p->getX();
-                int y = p->getY();
-                if (x < 0 || x >= LARGEUR || y < 0 || y >= HAUTEUR)
-                    continue;
-
-                const auto &texs = p->getTextures();
-                if (texs.empty())
-                    grille[y][x] = ".";
-                else
-                {
-                    string s;
-                    for (char t : texs)
-                        s.push_back(t);
-                    grille[y][x] = s;
-                }
-            }
-
-            // 5) Affichage
-            for (int y = HAUTEUR - 1; y >= 0; --y)
-            {
-                for (int x = 0; x < LARGEUR; ++x)
-                    cout << grille[y][x];
-                cout << "\n";
-            }
-
+            AffichageTexture affichage;
+            affichage.afficher(manager.getElements(), 
+                              lignesC1.empty() ? nullptr : &lignesC1,
+                              lignesC2.empty() ? nullptr : &lignesC2);
             continue;
         }
-        // ORTHESE IDs
+        
+        // ORTHESE IDs (Template Method)
         else if (cmd == "o2")
         {
-            vector<vector<char>> grille(HAUTEUR, vector<char>(LARGEUR, ' '));
-
-            // 1) Placer les IDs
-            for (auto e : manager.getElements())
-            {
-                PointMD *p = dynamic_cast<PointMD *>(e);
-                if (!p)
-                    continue;
-
-                int x = p->getX();
-                int y = p->getY();
-                int id = p->getId();
-                if (x >= 0 && x < LARGEUR && y >= 0 && y < HAUTEUR)
-                    grille[y][x] = (id < 10 ? '0' + id : '*');
-            }
-
-            // 2) Tracer les lignes C1
-            for (auto &L : lignesC1)
-                if (L.a && L.b)
-                    tracerLigne(grille,
-                                L.a->getX(), L.a->getY(),
-                                L.b->getX(), L.b->getY());
-
-            // 3) Tracer les lignes C2
-            for (auto &L : lignesC2)
-                if (L.a && L.b)
-                    tracerLigne(grille,
-                                L.a->getX(), L.a->getY(),
-                                L.b->getX(), L.b->getY());
-
-            // 4) Ré-afficher les IDs par-dessus les traits
-            for (auto e : manager.getElements())
-            {
-                PointMD *p = dynamic_cast<PointMD *>(e);
-                if (!p)
-                    continue;
-
-                int x = p->getX();
-                int y = p->getY();
-                int id = p->getId();
-                if (x >= 0 && x < LARGEUR && y >= 0 && y < HAUTEUR)
-                    grille[y][x] = (id < 10 ? '0' + id : '*');
-            }
-
-            // 5) Affichage
-            for (int y = HAUTEUR - 1; y >= 0; --y)
-            {
-                for (int x = 0; x < LARGEUR; ++x)
-                    cout << grille[y][x];
-                cout << "\n";
-            }
-
+            AffichageID affichage;
+            affichage.afficher(manager.getElements(),
+                              lignesC1.empty() ? nullptr : &lignesC1,
+                              lignesC2.empty() ? nullptr : &lignesC2);
             continue;
         }
         else
