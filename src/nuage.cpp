@@ -8,6 +8,11 @@ Nuage::Nuage(int id, char texture)
 }
 
 int Nuage::getId() const { return id_; }
+void Nuage::setId(int newId)
+{
+    id_ = newId;
+}
+
 char Nuage::getTexture() const { return texture_; }
 
 const std::vector<IElement*>& Nuage::getEnfants() const
@@ -50,16 +55,20 @@ void Nuage::appliquerTexture(char t)
 
 void Nuage::afficher() const
 {
-    std::cout << "Nuage '" << texture_ << "' contient les points: ";
-    auto pts = getPoints();
-    for (size_t i = 0; i < pts.size(); ++i)
+    std::cout << id_ << ": Nuage '" << texture_
+         << "' contient les elements: ";
+
+    for (auto e : enfants_)
     {
-        std::cout << pts[i]->getId();
-        if (i + 1 < pts.size())
-            std::cout << ", ";
+        if (auto p = dynamic_cast<PointMD*>(e))
+            std::cout << p->getId() << " ";
+        else if (auto n = dynamic_cast<Nuage*>(e))
+            std::cout << n->getId() << " ";
     }
+
     std::cout << std::endl;
 }
+
 
 void Nuage::afficherDansGrille(std::vector<std::vector<char>>& grille,
                                bool afficherID) const

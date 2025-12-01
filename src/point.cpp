@@ -11,6 +11,12 @@ int PointMD::getX() const { return x_; }
 int PointMD::getY() const { return y_; }
 char PointMD::getTexture() const { return texture_; }
 
+void PointMD::setId(int newId)
+{
+    id_ = newId;
+}
+
+
 void PointMD::setPosition(int newX, int newY)
 {
     x_ = newX;
@@ -37,16 +43,18 @@ const std::vector<char>& PointMD::getTextures() const
 
 void PointMD::afficher() const
 {
-    std::cout << id_
-              << ": (" << x_ << "," << y_ << ")  texture='";
+    std::cout << id_ << ": ("
+         << x_ << "," << y_ << ")  textures: '";
 
-    if (texture_ == ' ')
-        std::cout << " '";
+    if (textures_.empty())
+        std::cout << " ";
     else
-        std::cout << texture_ << "'";
+        for (char t : textures_)
+            std::cout << t;
 
-    std::cout << std::endl;
+    std::cout << "'" << std::endl;
 }
+
 
 void PointMD::afficherDansGrille(std::vector<std::vector<char>>& grille,
                                  bool afficherID) const

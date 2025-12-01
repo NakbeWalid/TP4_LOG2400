@@ -61,15 +61,15 @@ int main(int argc, char *argv[])
     {
         cout << "\nCommandes:\n"
              << "a  - Afficher les points et les nuages\n"
-             << "o1 - Afficher l'orthèse avec les textures des points\n"
-             << "o2 - Afficher l'orthèse avec les IDs des points\n"
+             << "o1 - Afficher l'orthese avec les textures des points\n"
+             << "o2 - Afficher l'orthese avec les IDs des points\n"
              << "f  - Fusionner des points dans un nuage (et appliquer texture)\n"
              << "d  - Deplacer un point (ID)\n"
              << "s  - Supprimer un point (ID)\n"
-             << "u - Annuler la dernière commande (undo)"
-             << "r- Réappliquer la derniêre commande annulée (redo)"
-             << "c1 - Créer les surfaces selon l'ordre des IDs\n"
-             << "c2 - Créer les surfaces selon la distance minimale\n"
+             << "u - Annuler la dernière commande (undo)\n"
+             << "r- Reappliquer la derniêre commande annulee (redo)\n"
+             << "c1 - Creer les surfaces selon l'ordre des IDs\n"
+             << "c2 - Creer les surfaces selon la distance minimale\n"
              << "q  - Quitter\n> ";
         getline(cin, cmd);
 
@@ -93,49 +93,57 @@ int main(int argc, char *argv[])
         {
             cout << "\nListe:\n";
 
-            // 1) Afficher les pointsg
+            // Séparer points et nuages
+            vector<PointMD *> points;
+            vector<Nuage *> clouds;
+
             for (auto e : manager.getElements())
             {
-                PointMD *p = dynamic_cast<PointMD *>(e);
-                if (p)
-                {
-                    // afficher les textures du point
-                    cout << p->getId() << ": ("
-                         << p->getX() << "," << p->getY() << ")  textures: '";
-
-                    const auto &texs = p->getTextures();
-                    if (texs.empty())
-                        cout << " ";
-                    else
-                        for (char t : texs)
-                            cout << t;
-
-                    cout << "'\n";
-                }
+                if (auto p = dynamic_cast<PointMD *>(e))
+                    points.push_back(p);
+                else if (auto n = dynamic_cast<Nuage *>(e))
+                    clouds.push_back(n);
             }
 
-            // 2) Afficher les nuages
-            for (auto elem : nuages)
+            // Trier par ID
+            sort(points.begin(), points.end(),
+                 [](PointMD *a, PointMD *b)
+                 { return a->getId() < b->getId(); });
+
+            sort(clouds.begin(), clouds.end(),
+                 [](Nuage *a, Nuage *b)
+                 { return a->getId() < b->getId(); });
+
+            // --- 1) Affichage des points ---
+            for (auto p : points)
             {
-                Nuage *n = dynamic_cast<Nuage *>(elem);
-                if (!n)
-                    continue;
+                cout << p->getId() << ": ("
+                     << p->getX() << "," << p->getY() << ")  textures: '";
 
+                const auto &texs = p->getTextures();
+                if (texs.empty())
+                    cout << " ";
+                else
+                    for (char t : texs)
+                        cout << t;
+
+                cout << "'\n";
+            }
+
+            // --- 2) Affichage des nuages ---
+            for (auto n : clouds)
+            {
                 cout << n->getId() << ": Nuage '" << n->getTexture()
-                     << "' contient les éléments: ";
+                     << "' contient les elements: ";
 
-                for (auto e : n->getEnfants())
+                for (auto child : n->getEnfants())
                 {
-                    PointMD *p = dynamic_cast<PointMD *>(e);
-                    if (p)
+                    if (auto p = dynamic_cast<PointMD *>(child))
                         cout << p->getId() << " ";
-                    else
-                    {
-                        Nuage *sub = dynamic_cast<Nuage *>(e);
-                        if (sub)
-                            cout << sub->getId() << " ";
-                    }
+                    else if (auto sub = dynamic_cast<Nuage *>(child))
+                        cout << sub->getId() << " ";
                 }
+
                 cout << "\n";
             }
 
@@ -209,6 +217,7 @@ int main(int argc, char *argv[])
             continue;
         }
         // FUSIONNER DES POINTS DANS UN NOUVEAU NUAGE
+        // FUSIONNER DES POINTS/NUAGE DANS UN NOUVEAU NUAGE
         else if (cmd == "f")
         {
             cout << "IDs de points/nuages à fusionner (ex: 0 2 5): ";
@@ -228,13 +237,10 @@ int main(int argc, char *argv[])
                 continue;
             }
 
-            // Nouvelle texture automatique
             char tex = texturesNuages[nuages.size() % texturesNuages.size()];
 
-            // Créer le nouveau nuage
-            Nuage *nouveau = new Nuage((int)(elements.size()), tex);
+            Nuage *nouveau = new Nuage((int)elements.size(), tex);
 
-            // Pour chaque ID donné
             for (int pid : ids)
             {
                 IElement *elem = manager.getElement(pid);
@@ -245,29 +251,21 @@ int main(int argc, char *argv[])
                     continue;
                 }
 
-                Nuage *subNuage = dynamic_cast<Nuage *>(elem);
-                PointMD *pmd = dynamic_cast<PointMD *>(elem);
-
-                if (pmd)
+                if (auto pmd = dynamic_cast<PointMD *>(elem))
                 {
-                    // cas point simple
                     nouveau->ajouterElement(pmd);
                     pmd->addTexture(tex);
                 }
-                else if (subNuage)
+                else if (auto subNuage = dynamic_cast<Nuage *>(elem))
                 {
-                    // cas NUAGE → on ajoute le NUAGE LUI-MÊME
-                    nouveau->ajouterElement(subNuage);
-                    subNuage->appliquerTexture(tex);
+                    nouveau->ajouterElement(subNuage); // on ajoute le nuage, pas ses points
+                    subNuage->appliquerTexture(tex);   // applique la texture à tous ses points
                 }
             }
 
-            // Appliquer texture au nuage (affichage)
             nouveau->appliquerTexture(tex);
-
-            // L’ajouter dans la liste
             nuages.push_back(nouveau);
-            elements.push_back(nouveau); // IMPORTANT : devient un IElement*
+            elements.push_back(nouveau); // IMPORTANT
 
             continue;
         }

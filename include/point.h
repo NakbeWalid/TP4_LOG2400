@@ -16,6 +16,9 @@ public:
     void setPosition(int newX, int newY);
     void setTexture(char t);
 
+    void setId(int newId);
+
+
     // Pour gérer plusieurs textures (si le point est dans plusieurs nuages)
     void addTexture(char t);
     const std::vector<char>& getTextures() const;

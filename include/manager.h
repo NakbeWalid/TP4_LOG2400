@@ -1,26 +1,21 @@
 #pragma once
 #include <vector>
 #include "IElement.h"
-#include "point.h"
-#include "nuage.h"
 
-// Le Manager gère les éléments (Points + Nuages) de manière centralisée.
+class PointMD;
+class Nuage;
+
 class Manager
 {
-private:
-    std::vector<IElement *> &elements_; // référence vers la liste globale
-
 public:
-    Manager(std::vector<IElement *> &elems);
+    
+    explicit Manager(std::vector<IElement*>& elems);
 
-    // Récupère un élément (Point ou Nuage) contenant ce point ID
-    IElement *getElement(int id) const;
+    std::vector<IElement*>& getElements();
 
-    // Récupère UNIQUEMENT un Point par ID
-    PointMD *getPoint(int id) const;
+    PointMD* getPoint(int id) const;
+    IElement* getElement(int id) const;
 
-    Nuage* getNuage(int id) const;
-
-    // Accès direct aux éléments (utile pour CmdSupprimer / CmdFusionner)
-    std::vector<IElement *> &getElements();
+private:
+    std::vector<IElement*>& elements_;
 };

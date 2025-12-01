@@ -14,6 +14,7 @@ public:
 
     // Accès
     int getId() const;
+    void setId(int newId);
     char getTexture() const;
     const std::vector<IElement*>& getEnfants() const;
 
